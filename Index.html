@@ -1,0 +1,234 @@
+ 
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Werkstatt-Kalkulator</title>
+
+<style>
+    :root {
+        --primary: #ff4b4b;
+        --bg: #f5f7fa;
+        --text-dark: #1e293b;
+        --text-light: #475569;
+        --card-bg: #ffffff;
+        --radius: 14px;
+    }
+
+    body {
+        margin: 0;
+        background: var(--bg);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: var(--text-dark);
+        padding-bottom: 100px;
+    }
+
+    /* Header */
+    header {
+        background: var(--primary);
+        padding: 18px;
+        color: white;
+        text-align: center;
+        font-weight: 600;
+        font-size: 1.3rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    /* Container */
+    .container {
+        max-width: 650px;
+        margin: 20px auto;
+        padding: 0 12px;
+    }
+
+    /* Search */
+    .search {
+        width: 100%;
+        padding: 14px;
+        border-radius: var(--radius);
+        border: 2px solid #e2e8f0;
+        font-size: 1rem;
+        margin-bottom: 12px;
+        transition: 0.2s;
+    }
+    .search:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 6px rgba(255,75,75,0.4);
+    }
+
+    /* Kategorie */
+    .category {
+        margin-top: 25px;
+        margin-bottom: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: var(--text-light);
+        padding-left: 5px;
+    }
+
+    /* Item */
+    .item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--card-bg);
+        padding: 14px 18px;
+        border-radius: var(--radius);
+        margin-bottom: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transition: 0.15s;
+    }
+
+    .item:hover {
+        transform: scale(1.01);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+    }
+
+    .item-name {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .item-sub {
+        color: var(--text-light);
+        font-size: 0.82rem;
+        margin-top: 3px;
+    }
+
+    /* Inputs */
+    .qty-input {
+        width: 90px;
+        padding: 10px;
+        text-align: center;
+        font-size: 1.05rem;
+        border: 2px solid #e2e8f0;
+        border-radius: var(--radius);
+        transition: 0.2s;
+    }
+    .qty-input:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 6px rgba(255,75,75,0.3);
+    }
+
+    /* Total Bar */
+    .total-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--text-dark);
+        color: white;
+        padding: 18px 25px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.4rem;
+        font-weight: bold;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+    }
+</style>
+</head>
+
+<body>
+
+<header>Werkstatt‑Kalkulator</header>
+
+<div class="container">
+    <input type="text" id="searchInput" class="search" placeholder="Suchen..." onkeyup="filterItems()">
+    <div id="app-list"></div>
+</div>
+
+<div class="total-bar">
+    <span>Total:</span>
+    <span>CHF <span id="grandTotal">0.00</span></span>
+</div>
+
+<script>
+const data = [
+    { cat: "Maschinen (pro Min.)", items: [
+        { n: "CNC", p: 1.00 }, { n: "Holzma", p: 0.80 }, { n: "Kantenleimer", p: 0.50 },
+        { n: "Stationärmaschinen", p: 0.25 }, { n: "Breitband", p: 0.50 }, { n: "Kleinmaschine", p: 0.15 }
+    ]},
+    { cat: "Platten & Holz", items: [
+        { n: "Fichte Massivholz (m3)", p: 1250.00 }, { n: "Span beschichtet 19er (m2)", p: 8.00 },
+        { n: "Kanten weiss 23mm (1m)", p: 0.25 }, { n: "Kante eiche 23mm (1m)", p: 1.00 },
+        { n: "DSP 42mm (m2)", p: 33.00 }, { n: "DSP 19er (m2)", p: 18.00 },
+        { n: "MDF Gr. 19er (m2)", p: 14.55 }, { n: "Span Eiche furniert (m2)", p: 34.20 },
+        { n: "Kanthölzer 60x100 (1m)", p: 3.90 }
+    ]},
+    { cat: "Beschläge & Technik", items: [
+        { n: "Frontstabilisierung Blum", p: 2.00 }, { n: "Zifferschlüssel Glutz", p: 6.25 },
+        { n: "Schloss", p: 11.65 }, { n: "Hoppe Amsterdam Drücker", p: 14.00 },
+        { n: "Rastex Verbinder", p: 1.70 }, { n: "Lamello 20er", p: 0.03 },
+        { n: "Tip-On", p: 4.00 }, { n: "Distanzleiste Schublade", p: 4.80 },
+        { n: "Clamex", p: 1.20 }, { n: "Sockelsteller", p: 2.90 },
+        { n: "Lüftungsgitter", p: 2.90 }, { n: "Winkelbodenträger", p: 0.30 },
+        { n: "Rafix 62mm", p: 0.08 }, { n: "Schliessblech", p: 3.50 },
+        { n: "Dübel 8x40mm", p: 0.02 }, { n: "Bänder (Eckbänder)", p: 3.00 },
+        { n: "Kleiderstangenhalter m. Schr.", p: 2.54 }, { n: "Kleiderstange 2.5m", p: 16.00 },
+        { n: "Tablarträger", p: 0.04 }
+    ]},
+    { cat: "Schrauben", items: [
+        { n: "Schrauben Diverses", p: 0.06 }, { n: "Selbstbohrschr. 4x60 (500er)", p: 53.00 },
+        { n: "Griffschrauben", p: 0.04 }, { n: "Gummipuffer", p: 0.08 },
+        { n: "Euroschrauben 11+14mm", p: 0.06 }, { n: "Euroschrauben 3.5mm", p: 0.13 }
+    ]},
+    { cat: "Chemie & Verbrauch", items: [
+        { n: "Leim 300ml", p: 3.00 }, { n: "Feinblatt", p: 7.00 },
+        { n: "Malerklebeband Gold", p: 6.00 }, { n: "Gysoband Doppelseitig", p: 26.00 },
+        { n: "Schleifpapier Ø150", p: 0.60 }, { n: "Schleifp. Parkett", p: 4.50 },
+        { n: "Lack Parkettboden (l)", p: 23.20 }, { n: "Silikon", p: 8.41 },
+        { n: "Baukleber", p: 7.10 }, { n: "Acryl", p: 3.50 },
+        { n: "Klarlack (l)", p: 17.30 }, { n: "Farbe (l)", p: 31.00 },
+        { n: "Gummidichtung (1m)", p: 3.00 }, { n: "Handlauf DU 40mm (1m)", p: 27.00 }
+    ]}
+];
+
+function render() {
+    const list = document.getElementById('app-list');
+    data.forEach(cat => {
+        list.innerHTML += `<div class="category">${cat.cat}</div>`;
+        cat.items.forEach(item => {
+            list.innerHTML += `
+            <div class="item">
+                <div>
+                    <div class="item-name">${item.n}</div>
+                    <div class="item-sub">CHF ${item.p.toFixed(2)}</div>
+                </div>
+                <input type="number" class="qty-input" value="0" min="0" step="any"
+                       oninput="calc()" data-price="${item.p}">
+            </div>`;
+        });
+    });
+}
+
+function calc() {
+    let total = 0;
+    document.querySelectorAll('.qty-input').forEach(i => {
+        total += (parseFloat(i.value) || 0) * parseFloat(i.dataset.price);
+    });
+    document.getElementById('grandTotal').innerText =
+        total.toLocaleString('de-CH', { minimumFractionDigits: 2 });
+}
+
+function filterItems() {
+    let f = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.item').forEach(i =>
+        i.style.display = i.innerText.toLowerCase().includes(f) ? "flex" : "none"
+    );
+}
+
+render();
+</script>
+
+</body>
+</html>
+ 
+
+ 
